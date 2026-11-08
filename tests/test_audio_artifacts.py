@@ -29,7 +29,7 @@ def test_tts_synthesis(tmp_path):
 
 
 def test_stt_transcription(tmp_path):
-    stt = FasterWhisperSTTEngine()
+    stt = FasterWhisperSTTEngine(model_size_or_path="mock")
     # Generate dummy WAV audio to feed to STT
     tts = PiperTTSEngine()
     dummy_audio = tmp_path / "input.wav"
@@ -83,8 +83,8 @@ def test_artifact_manager_crud(tmp_path):
     assert manager.get_artifact(art1.metadata.id) is None
 
 
-def test_artifact_renderer():
-    manager = ArtifactManager(storage_dir=Path(":memory:"))
+def test_artifact_renderer(tmp_path):
+    manager = ArtifactManager(storage_dir=tmp_path / "artifacts")
 
     # Mermaid
     mermaid_art = manager.create_artifact(
