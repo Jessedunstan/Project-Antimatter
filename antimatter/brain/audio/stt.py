@@ -46,6 +46,10 @@ class FasterWhisperSTTEngine:
 
     def _ensure_loaded(self) -> None:
         """Load Faster-Whisper CTranslate2 model."""
+        if self.model_size_or_path == "mock":
+            self._model = None
+            return
+
         if self._model is None:
             try:
                 from faster_whisper import WhisperModel
