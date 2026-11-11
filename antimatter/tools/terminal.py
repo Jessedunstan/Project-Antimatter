@@ -43,14 +43,18 @@ class TerminalSandbox:
     def _prepare_shell(self, command: str) -> tuple[str, list[str]]:
         """Resolve executable and arguments for platform-native shell."""
         if self.is_windows:
-            # Use PowerShell with UTF-8 encoding forced
+            clean_cmd = command.strip()
+            # If command starts with a quote, prepend PowerShell call operator '& '
+            if (clean_cmd.startswith('"') or clean_cmd.startswith("'")) and not clean_cmd.startswith("&"):
+                clean_cmd = f"& {clean_cmd}"
+
             shell_cmd = "powershell.exe"
             args = [
                 "-NoProfile",
                 "-NonInteractive",
                 "-ExecutionPolicy", "Bypass",
                 "-Command",
-                f"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; {command}"
+                f"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; {clean_cmd}"
             ]
         else:
             shell_cmd = "/bin/bash"
@@ -76,11 +80,17 @@ class TerminalSandbox:
     async def execute(
         self,
         command: str,
-        timeout_sec: Optional[int] = None,
+        timeout_sec: Optional[int | float | str] = None,
         env: Optional[Dict[str, str]] = None,
     ) -> CommandResult:
         """Run command in sandbox and wait for completion."""
-        effective_timeout = timeout_sec or self.max_timeout_sec
+        if timeout_sec is not None:
+            try:
+                effective_timeout = float(timeout_sec)
+            except (ValueError, TypeError):
+                effective_timeout = float(self.max_timeout_sec)
+        else:
+            effective_timeout = float(self.max_timeout_sec)
         shell_cmd, args = self._prepare_shell(command)
 
         # Merge environment

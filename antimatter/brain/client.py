@@ -87,6 +87,34 @@ class LocalLLMClient:
 
         raise NotImplementedError(f"Backend '{self.backend}' streaming is not yet initialized.")
 
+    async def chat(
+        self,
+        messages: List[ChatMessage],
+        tools: Optional[List[ToolDefinition]] = None,
+        model: Optional[str] = None,
+        temperature: float = 0.2,
+    ) -> ChatMessage:
+        """Accumulate streaming chat response into a single ChatMessage."""
+        text_parts: List[str] = []
+        tool_calls: List[ToolCall] = []
+
+        async for chunk in self.stream_chat(
+            messages=messages,
+            tools=tools,
+            model=model,
+            temperature=temperature,
+        ):
+            if chunk.delta_text:
+                text_parts.append(chunk.delta_text)
+            if chunk.tool_call_delta:
+                tool_calls.append(chunk.tool_call_delta)
+
+        return ChatMessage(
+            role=ChatRole.ASSISTANT,
+            content="".join(text_parts),
+            tool_calls=tool_calls if tool_calls else None,
+        )
+
     @staticmethod
     def _normalize_tool_arguments(raw_args: Any) -> Dict[str, Any]:
         """Normalize tool call arguments across local models and serving backends.
@@ -139,27 +167,6 @@ class LocalLLMClient:
         """Stream from Ollama /api/chat endpoint with hybrid tool-call extraction."""
         url = f"{self.settings.ollama_base_url}/api/chat"
 
-        # Build message payload, augmenting system prompt if tools are active
-        processed_messages = list(messages)
-        if tools:
-            # Check if system prompt already exists
-            tool_guide = ToolCallExtractor.format_tools_for_system_prompt(tools)
-            sys_msg_idx = next((i for i, m in enumerate(processed_messages) if m.role == ChatRole.SYSTEM), None)
-            if sys_msg_idx is not None:
-                updated_content = processed_messages[sys_msg_idx].content + "\n" + tool_guide
-                processed_messages[sys_msg_idx] = ChatMessage(
-                    role=ChatRole.SYSTEM,
-                    content=updated_content,
-                )
-            else:
-                processed_messages.insert(
-                    0,
-                    ChatMessage(
-                        role=ChatRole.SYSTEM,
-                        content=f"You are a sovereign AI software engineering agent.\n{tool_guide}"
-                    )
-                )
-
         payload: Dict[str, Any] = {
             "model": model,
             "messages": [
@@ -168,7 +175,7 @@ class LocalLLMClient:
                     "content": m.content,
                     **({"tool_calls": [tc.model_dump() for tc in m.tool_calls]} if m.tool_calls else {})
                 }
-                for m in processed_messages
+                for m in messages
             ],
             "options": {"temperature": temperature},
             "stream": True,
@@ -202,13 +209,19 @@ class LocalLLMClient:
                     if raw_tool_calls:
                         for tc in raw_tool_calls:
                             func = tc.get("function", {})
+                            name = func.get("name", "unknown_tool")
                             call_id = str(uuid.uuid4())[:8]
                             normalized_args = self._normalize_tool_arguments(func.get("arguments", {}))
+                            
+                            # Filter out hallucinated empty calls from tiny models
+                            if not normalized_args:
+                                continue
+
                             yielded_native_tool_call = True
                             yield CompletionChunk(
                                 tool_call_delta=ToolCall(
                                     id=call_id,
-                                    name=func.get("name", "unknown_tool"),
+                                    name=name,
                                     arguments=normalized_args,
                                 )
                             )
@@ -222,7 +235,8 @@ class LocalLLMClient:
                         if not yielded_native_tool_call and tools and accumulated_text:
                             _, fallback_tcs = ToolCallExtractor.extract_from_text(accumulated_text, tools)
                             for tc in fallback_tcs:
-                                yield CompletionChunk(tool_call_delta=tc)
+                                if tc.arguments:
+                                    yield CompletionChunk(tool_call_delta=tc)
 
                         yield CompletionChunk(finish_reason="stop")
 

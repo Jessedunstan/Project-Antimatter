@@ -83,11 +83,62 @@ class RegisteredTool:
             )
         )
 
-    async def execute(self, arguments: Dict[str, Any]) -> Any:
-        """Execute the wrapped function with provided arguments."""
+    async def execute(self, raw_arguments: Dict[str, Any]) -> Any:
+        """Execute the wrapped function with sanitized and coerced arguments."""
+        args = dict(raw_arguments) if isinstance(raw_arguments, dict) else {}
+
+        # 1. Unwrap nested payload structures if model wrapped them
+        for nest_key in ("parameters", "arguments", "input"):
+            if nest_key in args and isinstance(args[nest_key], dict):
+                inner = args.pop(nest_key)
+                args.update(inner)
+
+        # 2. Inspect signature and type annotations
+        sig = inspect.signature(self.func)
+        try:
+            type_hints = get_type_hints(self.func)
+        except Exception:
+            type_hints = {}
+
+        has_var_keyword = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
+
+        sanitized: Dict[str, Any] = {}
+        for param_name, param in sig.parameters.items():
+            if param_name in ("self", "cls"):
+                continue
+
+            if param_name in args:
+                val = args[param_name]
+                expected_type = type_hints.get(param_name, Any)
+
+                # Type coercion
+                if expected_type in (int, Optional[int]) and isinstance(val, str):
+                    try:
+                        val = int(val.strip())
+                    except ValueError:
+                        pass
+                elif expected_type in (bool, Optional[bool]) and isinstance(val, str):
+                    val = val.strip().lower() in ("true", "1", "yes")
+                elif expected_type in (float, Optional[float]) and isinstance(val, str):
+                    try:
+                        val = float(val.strip())
+                    except ValueError:
+                        pass
+
+                sanitized[param_name] = val
+            elif param.default is not inspect.Parameter.empty:
+                # Default will be used by Python
+                pass
+
+        # If var_keyword exists, retain extra sanitized args
+        if has_var_keyword:
+            for k, v in args.items():
+                if k not in sanitized and k not in ("type", "function"):
+                    sanitized[k] = v
+
         if inspect.iscoroutinefunction(self.func):
-            return await self.func(**arguments)
-        return self.func(**arguments)
+            return await self.func(**sanitized)
+        return self.func(**sanitized)
 
 
 class ToolRegistry:
