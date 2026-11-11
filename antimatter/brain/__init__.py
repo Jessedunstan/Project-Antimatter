@@ -11,6 +11,11 @@ from antimatter.brain.types import (
 from antimatter.brain.client import LocalLLMClient
 from antimatter.brain.embeddings import LocalEmbeddingEngine
 from antimatter.brain.tool_extractor import ToolCallExtractor
+from antimatter.brain.arbiter import (
+    VRAMArbiter,
+    ModelTier,
+    ModelLease,
+)
 
 __all__ = [
     "ChatMessage",
@@ -22,4 +27,7 @@ __all__ = [
     "LocalLLMClient",
     "LocalEmbeddingEngine",
     "ToolCallExtractor",
+    "VRAMArbiter",
+    "ModelTier",
+    "ModelLease",
 ]

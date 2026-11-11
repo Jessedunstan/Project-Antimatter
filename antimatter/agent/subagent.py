@@ -120,7 +120,15 @@ class SubagentWorker:
     def start(self) -> None:
         """Start subagent background execution task."""
         self.status = AgentStatus.THINKING
-        self.task_handle = asyncio.create_task(self._run_lifecycle())
+        try:
+            loop = asyncio.get_running_loop()
+            self.task_handle = loop.create_task(self._run_lifecycle())
+        except RuntimeError:
+            try:
+                loop = asyncio.get_event_loop()
+                self.task_handle = loop.create_task(self._run_lifecycle())
+            except Exception:
+                self.task_handle = None
 
     async def _run_lifecycle(self) -> None:
         """Main lifecycle of the subagent."""

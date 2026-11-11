@@ -21,6 +21,17 @@ from antimatter.agent.skills.loader import (
     SkillLoader,
 )
 from antimatter.agent.skills.mcp_bridge import MCPClient
+from antimatter.agent.event_bus import (
+    AgentEventBus,
+    AgentMessage,
+    SharedBlackboard,
+)
+from antimatter.agent.relay import (
+    SpecialistRelayEngine,
+    SpecialistDomain,
+    RelayBaton,
+    RelayConsultationResult,
+)
 
 __all__ = [
     "AgentStatus",
@@ -36,4 +47,11 @@ __all__ = [
     "Skill",
     "SkillLoader",
     "MCPClient",
+    "AgentEventBus",
+    "AgentMessage",
+    "SharedBlackboard",
+    "SpecialistRelayEngine",
+    "SpecialistDomain",
+    "RelayBaton",
+    "RelayConsultationResult",
 ]
