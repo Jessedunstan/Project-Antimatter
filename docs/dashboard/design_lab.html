@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antimatter &#8212; Design Lab &amp; 3D Proving Ground Console</title>
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-surface: #0e121b;
+      --bg-card: #131926;
+      --bg-card-hover: #1a2234;
+      --border: #1f2a3f;
+      --border-bright: #2f3e5c;
+      --accent-cyan: #00f0ff;
+      --accent-violet: #8a2be2;
+      --accent-magenta: #ff007f;
+      --accent-green: #00ff88;
+      --accent-amber: #ffaa00;
+      --text: #e2e8f0;
+      --text-muted: #8b9bb4;
+      --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg-dark);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(rgba(0, 240, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(14, 18, 27, 0.8), rgba(7, 9, 14, 0.98));
+      background-size: 24px 24px, 100% 100%;
+    }
+
+    /* TOP HEADER */
+    header {
+      background: rgba(14, 18, 27, 0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0.85rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent-violet), var(--accent-cyan));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #000;
+      font-family: var(--font-mono);
+      font-size: 1.25rem;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
+    }
+
+    .brand-title {
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      letter-spacing: 0.5px;
+    }
+
+    .header-stats {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+    }
+
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    /* FILTER BAR */
+    .filter-bar {
+      max-width: 1400px;
+      width: 100%;
+      margin: 1.25rem auto 0;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      overflow-x: auto;
+    }
+
+    .filter-pill {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .filter-pill:hover, .filter-pill.active {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--accent-cyan);
+      color: #fff;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    }
+
+    /* MAIN CONTAINER */
+    main {
+      max-width: 1400px;
+      width: 100%;
+      margin: 1.5rem auto;
+      padding: 0 1.5rem 3rem;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 1024px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    /* SCENARIO CARDS */
+    .scenario-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-bright);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-tag {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      letter-spacing: 0.5px;
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+      color: #fff;
+    }
+
+    .card-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin-bottom: 1rem;
+      flex-grow: 1;
+    }
+
+    .card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid var(--border);
+      padding-top: 0.75rem;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .status-active { background: rgba(0, 255, 136, 0.12); color: var(--accent-green); }
+    .status-pending { background: rgba(255, 170, 0, 0.12); color: var(--accent-amber); }
+
+    /* TIMELINE FEED */
+    .timeline-sidebar {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .timeline-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--accent-cyan);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .timeline-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      position: relative;
+    }
+
+    .timeline-list::before {
+      content: '';
+      position: absolute;
+      top: 6px;
+      bottom: 6px;
+      left: 11px;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 0.85rem;
+      position: relative;
+    }
+
+    .timeline-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      margin-top: 5px;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px var(--accent-cyan);
+      z-index: 1;
+    }
+
+    .timeline-content {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.75rem 0.9rem;
+      flex-grow: 1;
+    }
+
+    .timeline-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.3rem;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+    }
+
+    .timeline-author { font-weight: 700; color: #fff; }
+    .timeline-time { color: var(--text-muted); }
+    .timeline-body { font-size: 0.8rem; color: var(--text-muted); line-height: 1.4; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">⋈</div>
+      <div>
+        <div class="brand-title">ANTIMATTER // DESIGN LAB</div>
+        <div class="brand-subtitle">Modular 3D AI Proving Ground &amp; Compositional Geometry Hub</div>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-pill"><span class="status-dot"></span> Hub State: Sovereign Offline</div>
+      <div class="stat-pill">Staging Lanes: 4 Isolated Labs</div>
+      <div class="stat-pill">Mainline: Protected</div>
+    </div>
+  </header>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <button class="filter-pill active" onclick="filterCards('all')">All Labs (4)</button>
+    <button class="filter-pill" onclick="filterCards('procedural')">Procedural &amp; VLM</button>
+    <button class="filter-pill" onclick="filterCards('diffusion')">Structured Latents</button>
+    <button class="filter-pill" onclick="filterCards('rea')">REA Harvester</button>
+    <button class="filter-pill" onclick="filterCards('voxel')">Voxel/SDF Stitching</button>
+  </div>
+
+  <!-- MAIN -->
+  <main>
+    <!-- LAB PROVING GROUNDS -->
+    <section class="scenario-grid">
+      
+      <!-- CARD 1 -->
+      <div class="card" data-category="procedural">
+        <div class="card-tag">Scenario LAB-3D-01 // Proving Ground</div>
+        <div class="card-title">Procedural Blender + VLM Critic Loop</div>
+        <div class="card-desc">
+          Autonomous generator-verifier pipeline. A code LLM writes Blender Python (<code>bpy</code>) primitives, renders multi-angle passes headlessly, and local VLM (Qwen2.5-VL / MiniCPM-V) scores anatomy and issues corrective geometry deltas.
+        </div>
+        <div class="card-meta">
+          <span>Staging: <code>staging/3d_blender_vlm/</code></span>
+          <span class="status-badge status-active">● Active Staging</span>
+        </div>
+      </div>
+
+      <!-- CARD 2 -->
+      <div class="card" data-category="diffusion">
+        <div class="card-tag">Scenario LAB-3D-02 // Proving Ground</div>
+        <div class="card-title">TRELLIS Structured Latents (SLAT)</div>
+        <div class="card-desc">
+          Rectified flow transformer operating on sparse 3D voxel structured latents. Generates sharp, topologically versatile 3D meshes (GLB) with PBR materials from text/image prompts in seconds.
+        </div>
+        <div class="card-meta">
+          <span>Staging: <code>staging/3d_trellis_latents/</code></span>
+          <span class="status-badge status-pending">○ Ready for Dispatch</span>
+        </div>
+      </div>
+
+      <!-- CARD 3 -->
+      <div class="card" data-category="rea">
+        <div class="card-tag">Scenario LAB-3D-03 // Proving Ground</div>
+        <div class="card-title">REA Anatomical Kitbash Harvester</div>
+        <div class="card-desc">
+          Reverse Engineering Analyst pipeline for 3D meshes. Scans local or open 3D repositories (Objaverse/Thingiverse), isolates canonical sub-parts (ears, hands, noses), and fits them onto proportional skeleton cages via ICP.
+        </div>
+        <div class="card-meta">
+          <span>Staging: <code>staging/3d_rea_harvester/</code></span>
+          <span class="status-badge status-pending">○ Ready for Dispatch</span>
+        </div>
+      </div>
+
+      <!-- CARD 4 -->
+      <div class="card" data-category="voxel">
+        <div class="card-tag">Scenario LAB-3D-04 // Proving Ground</div>
+        <div class="card-title">Voxel/SDF Octree Boolean Stitcher</div>
+        <div class="card-desc">
+          Mathematical seam fusion engine. Converts separately generated micro-parts into high-resolution Signed Distance Fields (SDF) or OpenVDB octrees, executes continuous Boolean union, and applies Dual Contouring for water-tight assembly.
+        </div>
+        <div class="card-meta">
+          <span>Staging: <code>staging/3d_sdf_stitcher/</code></span>
+          <span class="status-badge status-pending">○ Ready for Dispatch</span>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- TIMELINE OF ITERATION -->
+    <aside class="timeline-sidebar">
+      <div class="timeline-title">
+        <span>◷</span> Iteration Timeline &amp; Audit Feed
+      </div>
+      <div class="timeline-list">
+        
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="timeline-author">Main Design Lab</span>
+              <span class="timeline-time">Just now</span>
+            </div>
+            <div class="timeline-body">
+              Initialized Antimatter 3D Design Lab architecture. Established staging sandboxes, file-backed hand-back bus (<code>HANDOFF_STATE.md</code>), and mini-lab dispatch prompts.
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background: var(--accent-magenta); box-shadow: 0 0 8px var(--accent-magenta);"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="timeline-author">Research Lab</span>
+              <span class="timeline-time">Turn 1</span>
+            </div>
+            <div class="timeline-body">
+              Completed 5-specialist deep dive on compositional 3D modeling, VLM critic loops (SEIG/BlenderAlchemy), and Microsoft TRELLIS structured latents.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    function filterCards(category) {
+      document.querySelectorAll('.filter-pill').forEach(el => el.classList.remove('active'));
+      event.target.classList.add('active');
+      const cards = document.querySelectorAll('.card');
+      cards.forEach(card => {
+        if (category === 'all' || card.getAttribute('data-category') === category) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>
