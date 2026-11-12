@@ -72,6 +72,16 @@ class MultiLinePatcher:
         occurrences = norm_original.count(norm_target)
 
         if occurrences == 0:
+            # Fallback: try indentation-insensitive line matching while preserving file indentation
+            indented_result = self._try_indentation_aware_patch(
+                norm_original, norm_target, norm_replacement, replace_all=replace_all
+            )
+            if indented_result is not None:
+                updated_content = indented_result
+                diff = self.generate_diff(norm_original, updated_content, file_name=safe_path.name)
+                self.fs.write_atomic(safe_path, updated_content, checkpoint_id=checkpoint_id)
+                return diff, updated_content
+
             # Check for close match to provide helpful diagnostic error
             preview = norm_target[:120].strip()
             raise PatchError(
@@ -97,3 +107,54 @@ class MultiLinePatcher:
         self.fs.write_atomic(safe_path, updated_content, checkpoint_id=checkpoint_id)
 
         return diff, updated_content
+
+    @staticmethod
+    def _try_indentation_aware_patch(
+        norm_original: str,
+        norm_target: str,
+        norm_replacement: str,
+        replace_all: bool = False,
+    ) -> Optional[str]:
+        """Match target lines ignoring leading whitespace differences and preserve file indentation."""
+        target_lines = norm_target.strip("\n").split("\n")
+        target_stripped = [l.strip() for l in target_lines]
+        if not target_stripped or not any(target_stripped):
+            return None
+
+        orig_lines = norm_original.split("\n")
+        k = len(target_lines)
+        if k > len(orig_lines):
+            return None
+
+        match_indices = []
+        for i in range(len(orig_lines) - k + 1):
+            window = orig_lines[i : i + k]
+            if [w.strip() for w in window] == target_stripped:
+                match_indices.append(i)
+
+        if not match_indices:
+            return None
+        if len(match_indices) > 1 and not replace_all:
+            return None
+
+        replacement_lines = norm_replacement.strip("\n").split("\n")
+        target_first_nonempty = next((l for l in target_lines if l.strip()), "")
+        target_base_indent = len(target_first_nonempty) - len(target_first_nonempty.lstrip(" \t"))
+
+        updated_lines = list(orig_lines)
+        for idx in reversed(match_indices if replace_all else match_indices[:1]):
+            orig_first_nonempty = next((l for l in orig_lines[idx : idx + k] if l.strip()), "")
+            orig_indent_str = orig_first_nonempty[: len(orig_first_nonempty) - len(orig_first_nonempty.lstrip(" \t"))]
+
+            reindented = []
+            for r_line in replacement_lines:
+                if not r_line.strip():
+                    reindented.append("")
+                else:
+                    r_indent = len(r_line) - len(r_line.lstrip(" \t"))
+                    rel_indent = max(0, r_indent - target_base_indent)
+                    reindented.append(orig_indent_str + (" " * rel_indent) + r_line.lstrip(" \t"))
+
+            updated_lines[idx : idx + k] = reindented
+
+        return "\n".join(updated_lines)

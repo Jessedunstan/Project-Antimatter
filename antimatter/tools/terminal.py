@@ -93,8 +93,12 @@ class TerminalSandbox:
             effective_timeout = float(self.max_timeout_sec)
         shell_cmd, args = self._prepare_shell(command)
 
-        # Merge environment
+        # Merge environment and ensure active Python virtualenv bin/Scripts directory is first on PATH
         proc_env = os.environ.copy()
+        venv_bin = str(Path(sys.executable).resolve().parent)
+        current_path = proc_env.get("PATH", "")
+        if venv_bin not in current_path.split(os.pathsep):
+            proc_env["PATH"] = f"{venv_bin}{os.pathsep}{current_path}"
         if env:
             proc_env.update(env)
 
@@ -104,6 +108,7 @@ class TerminalSandbox:
                 shell_cmd,
                 *args,
                 cwd=str(self.working_dir),
+                stdin=asyncio.subprocess.DEVNULL,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 env=proc_env,

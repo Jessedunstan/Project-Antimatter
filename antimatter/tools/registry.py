@@ -83,15 +83,28 @@ class RegisteredTool:
             )
         )
 
+    # Common parameter aliases emitted by small local coding models
+    PARAM_ALIASES: Dict[str, tuple[str, ...]] = {
+        "path": ("file_path", "filepath", "file", "filename", "target_file"),
+        "command": ("cmd", "shell_command", "command_line", "script"),
+        "target": ("old_str", "old_string", "target_block", "search", "original"),
+        "replacement": ("new_str", "new_string", "replacement_block", "replace", "updated"),
+        "content": ("text", "body", "code", "file_content", "contents"),
+        "subpath": ("path", "dir", "directory", "folder"),
+        "query": ("search_query", "q", "pattern"),
+    }
+
     async def execute(self, raw_arguments: Dict[str, Any]) -> Any:
         """Execute the wrapped function with sanitized and coerced arguments."""
         args = dict(raw_arguments) if isinstance(raw_arguments, dict) else {}
 
-        # 1. Unwrap nested payload structures if model wrapped them
-        for nest_key in ("parameters", "arguments", "input"):
-            if nest_key in args and isinstance(args[nest_key], dict):
-                inner = args.pop(nest_key)
-                args.update(inner)
+        # 1. Unwrap nested payload structures if model wrapped them (supports multi-level unwrapping)
+        for _ in range(2):
+            for nest_key in ("parameters", "arguments", "input", "args", "kwargs"):
+                if nest_key in args and isinstance(args[nest_key], dict):
+                    inner = args.pop(nest_key)
+                    for k, v in inner.items():
+                        args.setdefault(k, v)
 
         # 2. Inspect signature and type annotations
         sig = inspect.signature(self.func)
@@ -103,12 +116,24 @@ class RegisteredTool:
         has_var_keyword = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
 
         sanitized: Dict[str, Any] = {}
+        missing_required: List[str] = []
+
         for param_name, param in sig.parameters.items():
-            if param_name in ("self", "cls"):
+            if param_name in ("self", "cls") or param.kind in (inspect.Parameter.VAR_POSITIONAL, inspect.Parameter.VAR_KEYWORD):
                 continue
 
+            # Resolve direct match or known alias
+            matched_key: Optional[str] = None
             if param_name in args:
-                val = args[param_name]
+                matched_key = param_name
+            else:
+                for alias in self.PARAM_ALIASES.get(param_name, ()):
+                    if alias in args:
+                        matched_key = alias
+                        break
+
+            if matched_key is not None and args[matched_key] is not None:
+                val = args[matched_key]
                 expected_type = type_hints.get(param_name, Any)
 
                 # Type coercion
@@ -126,9 +151,20 @@ class RegisteredTool:
                         pass
 
                 sanitized[param_name] = val
-            elif param.default is not inspect.Parameter.empty:
-                # Default will be used by Python
-                pass
+            elif param.default is inspect.Parameter.empty:
+                missing_required.append(param_name)
+
+        if missing_required:
+            req_specs = []
+            for p_name in missing_required:
+                p_type = type_hints.get(p_name, str)
+                type_label = getattr(p_type, "__name__", str(p_type))
+                req_specs.append(f"{p_name}: {type_label}")
+            provided_keys = list(args.keys())
+            raise ValueError(
+                f"Missing required argument(s) for tool '{self.name}': [{', '.join(req_specs)}]. "
+                f"Provided keys: {provided_keys}. Please retry '{self.name}' with all required arguments."
+            )
 
         # If var_keyword exists, retain extra sanitized args
         if has_var_keyword:
@@ -159,9 +195,20 @@ class ToolRegistry:
             return func
         return decorator
 
-    def get_definitions(self) -> List[ToolDefinition]:
-        """Return all registered tool definitions formatted for LLM consumption."""
+    def get_definitions(self, allowed_tools: Optional[List[str]] = None) -> List[ToolDefinition]:
+        """Return registered tool definitions formatted for LLM consumption."""
+        if allowed_tools is not None:
+            allowed_set = set(allowed_tools)
+            return [tool.schema for name, tool in self._tools.items() if name in allowed_set]
         return [tool.schema for tool in self._tools.values()]
+
+    def subset(self, tool_names: List[str]) -> "ToolRegistry":
+        """Create a scoped ToolRegistry containing only the specified tool names."""
+        sub = ToolRegistry()
+        for name in tool_names:
+            if name in self._tools:
+                sub._tools[name] = self._tools[name]
+        return sub
 
     def has_tool(self, name: str) -> bool:
         """Check if a tool exists in the registry."""

@@ -167,17 +167,31 @@ class LocalLLMClient:
         """Stream from Ollama /api/chat endpoint with hybrid tool-call extraction."""
         url = f"{self.settings.ollama_base_url}/api/chat"
 
+        required_by_tool = {
+            t.function.name: bool(t.function.parameters.get("required"))
+            for t in (tools or [])
+        }
+
         payload: Dict[str, Any] = {
             "model": model,
             "messages": [
                 {
                     "role": m.role.value,
                     "content": m.content,
-                    **({"tool_calls": [tc.model_dump() for tc in m.tool_calls]} if m.tool_calls else {})
+                    **(
+                        {
+                            "tool_calls": [
+                                {"function": {"name": tc.name, "arguments": tc.arguments}}
+                                for tc in m.tool_calls
+                            ]
+                        }
+                        if m.tool_calls
+                        else {}
+                    ),
                 }
                 for m in messages
             ],
-            "options": {"temperature": temperature},
+            "options": {"temperature": temperature, "num_predict": 1024},
             "stream": True,
         }
 
@@ -213,8 +227,8 @@ class LocalLLMClient:
                             call_id = str(uuid.uuid4())[:8]
                             normalized_args = self._normalize_tool_arguments(func.get("arguments", {}))
                             
-                            # Filter out hallucinated empty calls from tiny models
-                            if not normalized_args:
+                            # Filter out hallucinated empty calls from tiny models when tool requires args
+                            if not normalized_args and required_by_tool.get(name, True):
                                 continue
 
                             yielded_native_tool_call = True

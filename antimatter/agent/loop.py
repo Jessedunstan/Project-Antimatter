@@ -34,10 +34,10 @@ You possess deterministic workspace tools, Tree-sitter code intelligence, and a 
 
 CRITICAL OPERATIONAL RULES:
 1. Think step-by-step before acting.
-2. ALWAYS inspect files first using `read_file` to read the exact lines before editing. Never guess or hallucinate target lines.
-3. When using `edit_file`, ensure `target` is an exact character-for-character copy of lines from `read_file`.
-4. Verify your modifications by executing the test suite with `run_command`.
-5. Create a checkpoint with `create_checkpoint` once tests pass.
+2. ALWAYS inspect files first using `read_file(path="...")` to read the exact lines before editing. Never guess or hallucinate target lines.
+3. When modifying code, use `edit_file(path="...", target="...", replacement="...")` where `target` is an exact character-for-character substring of the file, OR use `write_file(path="...", content="...")` to write the complete corrected file.
+4. Verify your modifications by executing tests with `run_command(command="...")`.
+5. Only stop calling tools once the task is verified complete.
 """
 
 
@@ -53,6 +53,8 @@ class AgentReActLoop:
         compactor: Optional[ContextCompactor] = None,
         skill_loader: Optional[SkillLoader] = None,
         max_steps: int = 15,
+        allowed_tools: Optional[List[str]] = None,
+        model: Optional[str] = None,
     ):
         settings = get_settings()
         self.workspace_dir = (workspace_dir or settings.workspace_dir).resolve()
@@ -62,6 +64,8 @@ class AgentReActLoop:
         self.compactor = compactor or ContextCompactor(max_token_budget=8192)
         self.skill_loader = skill_loader
         self.max_steps = max_steps
+        self.allowed_tools = allowed_tools
+        self.model = model
 
     async def run(
         self,
@@ -96,7 +100,14 @@ class AgentReActLoop:
         messages.append(ChatMessage(role=ChatRole.SYSTEM, content=system_content))
         messages.append(ChatMessage(role=ChatRole.USER, content=task))
 
-        tool_defs = self.tool_registry.get_definitions()
+        tool_defs = self.tool_registry.get_definitions(allowed_tools=self.allowed_tools)
+        required_params_by_tool = {
+            td.function.name: set(td.function.parameters.get("required", []))
+            for td in tool_defs
+        }
+        retried_malformed = False
+        retried_unapplied_code = False
+        applied_file_edit = False
 
         # 2. Main ReAct execution loop
         for step_idx in range(1, self.max_steps + 1):
@@ -108,7 +119,12 @@ class AgentReActLoop:
 
             # Request LLM completion
             try:
-                response_msg = await self.llm_client.chat(messages, tools=tool_defs)
+                if self.model is not None:
+                    response_msg = await self.llm_client.chat(
+                        messages, tools=tool_defs, model=self.model
+                    )
+                else:
+                    response_msg = await self.llm_client.chat(messages, tools=tool_defs)
             except Exception as e:
                 trajectory.status = AgentStatus.ERROR
                 trajectory.error_message = f"Inference failed at step {step_idx}: {e}"
@@ -116,21 +132,72 @@ class AgentReActLoop:
                 return trajectory
 
             # Extract tool calls
-            tool_calls = response_msg.tool_calls or []
-            if not tool_calls and response_msg.content:
+            raw_tool_calls = response_msg.tool_calls or []
+            raw_text = response_msg.content or ""
+            if not raw_tool_calls and raw_text:
                 cleaned_text, extracted_tcs = ToolCallExtractor.extract_from_text(
-                    response_msg.content, available_tools=tool_defs
+                    raw_text, available_tools=tool_defs
                 )
-                tool_calls = extracted_tcs
-                if tool_calls:
+                raw_tool_calls = extracted_tcs
+                if raw_tool_calls:
                     response_msg.content = cleaned_text
+
+            # Filter out empty/nameless tool calls when the tool requires parameters
+            tool_calls: List[ToolCall] = []
+            for tc in raw_tool_calls:
+                if not tc.name or tc.name == "unknown_tool":
+                    continue
+                reqs = required_params_by_tool.get(tc.name, set())
+                if reqs and not tc.arguments:
+                    continue
+                tool_calls.append(tc)
 
             step.thought = response_msg.content
             step.tool_calls = tool_calls
             messages.append(response_msg)
 
-            # If no tool calls, task is complete
+            # If no valid tool calls were produced, check if the model attempted a malformed tool call
             if not tool_calls:
+                has_malformed_markup = any(
+                    marker in raw_text for marker in ("<tool_call>", "Action:", '"arguments"', '"parameters"')
+                )
+                if has_malformed_markup and not retried_malformed and step_idx < self.max_steps:
+                    retried_malformed = True
+                    messages.append(
+                        ChatMessage(
+                            role=ChatRole.USER,
+                            content=(
+                                "Your previous tool call was malformed or missing required arguments. "
+                                "Please invoke the tool again with valid JSON arguments matching its schema."
+                            ),
+                        )
+                    )
+                    if on_step:
+                        on_step(step)
+                    continue
+
+                if (
+                    "```python" in raw_text
+                    and not applied_file_edit
+                    and not retried_unapplied_code
+                    and step_idx < self.max_steps
+                    and any(t in required_params_by_tool for t in ("edit_file", "write_file"))
+                ):
+                    retried_unapplied_code = True
+                    messages.append(
+                        ChatMessage(
+                            role=ChatRole.USER,
+                            content=(
+                                "You output a Python code block in text but have not saved any changes to disk yet. "
+                                "Please call `write_file(path=..., content=...)` or `edit_file(path=..., target=..., replacement=...)` "
+                                "to apply the fix to the file."
+                            ),
+                        )
+                    )
+                    if on_step:
+                        on_step(step)
+                    continue
+
                 trajectory.status = AgentStatus.COMPLETED
                 trajectory.final_response = response_msg.content
                 if on_step:
@@ -142,6 +209,8 @@ class AgentReActLoop:
             for tc in tool_calls:
                 try:
                     tool_res = await self.tool_registry.dispatch(tc)
+                    if tc.name in ("edit_file", "write_file") and not str(tool_res).startswith("Error"):
+                        applied_file_edit = True
                 except Exception as e:
                     tool_res = f"Error executing tool '{tc.name}': {e}"
 
