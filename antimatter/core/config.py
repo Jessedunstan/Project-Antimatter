@@ -52,8 +52,8 @@ class AntimatterSettings(BaseSettings):
     llama_cpp_model_path: Optional[Path] = None
 
     # Model Assignments
-    planner_model: str = "qwen2.5-coder:32b"
-    autocomplete_model: str = "qwen2.5-coder:1.5b"
+    planner_model: str = "qwen2.5-coder:7b"
+    autocomplete_model: str = "llama3.2:1b"
     embedding_model: str = "BAAI/bge-small-en-v1.5"
 
     # Execution & Sandbox

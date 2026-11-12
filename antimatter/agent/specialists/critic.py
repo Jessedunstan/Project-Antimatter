@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from antimatter.agent.relay import RelayBaton, SpecialistDomain
-from antimatter.intelligence.ast_parser import ASTParser
+from antimatter.context.ast_parser import CodeASTParser
 from antimatter.core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class CodeCriticSpecialist:
 
     def __init__(self, model_name: str = "deepseek-r1:7b"):
         self.model_name = model_name
-        self.ast_parser = ASTParser()
+        self.ast_parser = CodeASTParser()
 
     def audit_python_code(self, source_code: str) -> CodeCritiqueReport:
         """Perform deterministic AST-level safety and syntax audit on Python code."""

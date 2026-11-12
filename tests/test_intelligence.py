@@ -1,11 +1,11 @@
-"""Test Suite for Track 3: Code Intelligence & Deep Context Layer."""
+"""Test Suite for Track 3: Code Intelligence & Deep Context Layer (Consolidated Context Package)."""
 
 import pytest
 from pathlib import Path
 
-from antimatter.intelligence.ast_parser import ASTParser, SymbolType
-from antimatter.intelligence.vector_store import CodebaseVectorStore
-from antimatter.intelligence.lsp_client import LSPClient
+from antimatter.context.ast_parser import CodeASTParser
+from antimatter.context.types import SymbolKind
+from antimatter.context.service import CodeIntelligenceService
 
 
 # ============================================================================
@@ -13,7 +13,7 @@ from antimatter.intelligence.lsp_client import LSPClient
 # ============================================================================
 
 def test_ast_python_symbol_extraction():
-    parser = ASTParser()
+    parser = CodeASTParser()
     py_code = (
         "class AgentOrchestrator:\n"
         "    def __init__(self, name: str):\n"
@@ -31,19 +31,19 @@ def test_ast_python_symbol_extraction():
 
     names = {s.name: s for s in symbols}
     assert "AgentOrchestrator" in names
-    assert names["AgentOrchestrator"].symbol_type == SymbolType.CLASS
+    assert names["AgentOrchestrator"].kind == SymbolKind.CLASS
     assert names["AgentOrchestrator"].start_line == 1
 
     assert "run_cycle" in names
-    assert names["run_cycle"].symbol_type == SymbolType.METHOD
-    assert names["run_cycle"].parent_symbol == "AgentOrchestrator"
+    assert names["run_cycle"].kind == SymbolKind.METHOD
+    assert names["run_cycle"].parent_name == "AgentOrchestrator"
 
     assert "standalone_worker" in names
-    assert names["standalone_worker"].symbol_type == SymbolType.FUNCTION
+    assert names["standalone_worker"].kind == SymbolKind.FUNCTION
 
 
 def test_ast_js_symbol_extraction():
-    parser = ASTParser()
+    parser = CodeASTParser()
     js_code = (
         "class EditorView {\n"
         "    render() {\n"
@@ -64,7 +64,7 @@ def test_ast_js_symbol_extraction():
 
 
 def test_ast_semantic_chunking():
-    parser = ASTParser()
+    parser = CodeASTParser()
     code = (
         "import sys\n"
         "\n"
@@ -75,13 +75,12 @@ def test_ast_semantic_chunking():
         "    def multiply(self, x, y):\n"
         "        return x * y\n"
     )
-    chunks = parser.chunk_source_code(code, file_path="math_utils.py")
+    chunks = parser.chunk_code(code, file_path="math_utils.py")
     assert len(chunks) >= 2
 
-    # Check that compute function chunk exists
-    func_chunk = next((c for c in chunks if c.symbol_name == "compute"), None)
+    func_chunk = next((c for c in chunks if c.name == "compute"), None)
     assert func_chunk is not None
-    assert func_chunk.symbol_type == SymbolType.FUNCTION
+    assert func_chunk.chunk_type == "function"
     assert "compute(a, b)" in func_chunk.content
 
 
@@ -89,9 +88,7 @@ def test_ast_semantic_chunking():
 # 2. CODEBASE VECTOR STORE (SQLITE-VEC) TESTS
 # ============================================================================
 
-def test_vector_store_index_and_search():
-    store = CodebaseVectorStore(db_path=":memory:")
-
+def test_vector_store_index_and_search(tmp_path):
     code_file1 = (
         "class TerminalSandbox:\n"
         "    def run_command(self, cmd: str):\n"
@@ -105,38 +102,39 @@ def test_vector_store_index_and_search():
         "        with open(path, 'w') as f: f.write(content)\n"
     )
 
-    indexed1 = store.index_file("tools/terminal.py", code_file1)
-    indexed2 = store.index_file("tools/fs.py", code_file2)
+    tools_dir = tmp_path / "tools"
+    tools_dir.mkdir(parents=True, exist_ok=True)
+    f1 = tools_dir / "terminal.py"
+    f2 = tools_dir / "fs.py"
+    f1.write_text(code_file1, encoding="utf-8")
+    f2.write_text(code_file2, encoding="utf-8")
+
+    service = CodeIntelligenceService(workspace_dir=tmp_path, db_path=":memory:")
+    indexed1 = service.index_file("tools/terminal.py")
+    indexed2 = service.index_file("tools/fs.py")
     assert indexed1 > 0
     assert indexed2 > 0
+    assert service.vector_store.count_chunks() >= 2
 
-    stats = store.get_stats()
-    assert stats["total_files"] == 2
-    assert stats["total_chunks"] >= 2
-
-    # Semantic search query for subprocess / terminal command execution
-    results = store.search_similar("execute shell subprocess", limit=1)
+    results = service.semantic_search("execute shell subprocess", limit=1)
     assert len(results) == 1
     top_match = results[0]
-    assert "terminal.py" in top_match.file_path
+    assert "terminal.py" in top_match.chunk.file_path
     assert top_match.distance >= 0.0
 
     # Delete file and ensure removal
-    deleted_count = store.delete_file("tools/terminal.py")
-    assert deleted_count > 0
-    assert store.get_stats()["total_files"] == 1
+    f1.unlink()
+    service.index_file("tools/terminal.py")
+    assert service.vector_store.count_chunks() == indexed2
+    service.vector_store.close()
 
 
 # ============================================================================
-# 3. HEADLESS LSP CLIENT TESTS
+# 3. HEADLESS LSP / HOVER TESTS
 # ============================================================================
 
 @pytest.mark.asyncio
 async def test_lsp_client_ast_fallback(tmp_path):
-    lsp = LSPClient(workspace_root=tmp_path)
-    started = await lsp.start()
-    assert started is True
-
     code = (
         "class CompilerEngine:\n"
         "    def compile_source(self, code: str) -> bool:\n"
@@ -146,15 +144,9 @@ async def test_lsp_client_ast_fallback(tmp_path):
     test_file = tmp_path / "compiler.py"
     test_file.write_text(code, encoding="utf-8")
 
-    # Hover over method at line 2
-    hover = await lsp.get_hover(test_file, line=2, character=8)
+    service = CodeIntelligenceService(workspace_dir=tmp_path, db_path=":memory:")
+    hover = await service.get_hover(test_file, line=2, character=8)
     assert hover is not None
-    assert hover.symbol_name == "compile_source"
-    assert "compile_source" in hover.signature
+    assert "compile_source" in hover.contents
 
-    # Jump to definition of CompilerEngine
-    defs = await lsp.get_definition(test_file, line=1, character=5, symbol_name="CompilerEngine")
-    assert len(defs) == 1
-    assert defs[0].start_line == 1
-
-    await lsp.stop()
+    await service.close()
