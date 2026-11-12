@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 from PIL import Image, ImageDraw
 
-from staging.3d_blender_vlm.procedural_generator import Mesh3D
+from staging.lab_3d_blender_vlm.procedural_generator import Mesh3D
 
 
 class MultiViewRasterizer:

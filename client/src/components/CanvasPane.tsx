@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { LayoutDashboard, FileText, GitCompare, Code, RefreshCw } from "lucide-react";
+import {
+  LayoutDashboard,
+  FileText,
+  GitCompare,
+  Code,
+  RefreshCw,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  ExternalLink,
+} from "lucide-react";
 import { api } from "../services/api";
 import { ArtifactMeta } from "../types";
 
@@ -7,6 +17,7 @@ export const CanvasPane: React.FC = () => {
   const [artifacts, setArtifacts] = useState<ArtifactMeta[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
 
   const fetchArtifacts = async () => {
     setLoading(true);
@@ -46,13 +57,41 @@ export const CanvasPane: React.FC = () => {
           <LayoutDashboard size={14} className="text-purple-400" />
           <span>Interactive Artifacts Canvas</span>
         </div>
-        <button
-          onClick={fetchArtifacts}
-          className="text-[#9da3ae] hover:text-white p-1 rounded hover:bg-[#252830]"
-          title="Refresh Artifacts"
-        >
-          <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-        </button>
+        <div className="flex items-center space-x-2">
+          {selectedId && (
+            <div className="flex items-center space-x-1 bg-[#1e2026] px-1.5 py-0.5 rounded border border-[#2d313b] text-[#9da3ae]">
+              <button
+                onClick={() => setZoomLevel((z) => Math.max(50, z - 10))}
+                className="hover:text-white p-0.5"
+                title="Zoom Out"
+              >
+                <ZoomOut size={12} />
+              </button>
+              <span className="text-[10px] font-mono px-1">{zoomLevel}%</span>
+              <button
+                onClick={() => setZoomLevel((z) => Math.min(200, z + 10))}
+                className="hover:text-white p-0.5"
+                title="Zoom In"
+              >
+                <ZoomIn size={12} />
+              </button>
+              <button
+                onClick={() => setZoomLevel(100)}
+                className="hover:text-white p-0.5 ml-1"
+                title="Reset Zoom"
+              >
+                <Maximize2 size={11} />
+              </button>
+            </div>
+          )}
+          <button
+            onClick={fetchArtifacts}
+            className="text-[#9da3ae] hover:text-white p-1 rounded hover:bg-[#252830]"
+            title="Refresh Artifacts"
+          >
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 flex overflow-hidden">
@@ -83,14 +122,29 @@ export const CanvasPane: React.FC = () => {
           )}
         </div>
 
-        {/* Right Preview Frame */}
-        <div className="flex-1 bg-[#121316] relative flex flex-col">
+        {/* Right Preview Frame with Pan & Zoom */}
+        <div className="flex-1 bg-[#121316] relative flex flex-col overflow-hidden">
           {selectedId ? (
-            <iframe
-              src={api.getArtifactHtmlUrl(selectedId)}
-              title="Artifact Preview"
-              className="w-full h-full border-none"
-            />
+            <div
+              className="w-full h-full overflow-auto flex items-center justify-center p-2"
+              style={{ background: "#0f1115" }}
+            >
+              <div
+                style={{
+                  transform: `scale(${zoomLevel / 100})`,
+                  transformOrigin: "center center",
+                  transition: "transform 0.15s ease-out",
+                  width: "100%",
+                  height: "100%",
+                }}
+              >
+                <iframe
+                  src={api.getArtifactHtmlUrl(selectedId)}
+                  title="Artifact Preview"
+                  className="w-full h-full border-none rounded shadow-2xl bg-[#1a1c23]"
+                />
+              </div>
+            </div>
           ) : (
             <div className="h-full flex items-center justify-center text-[#64748b]">
               Select an artifact from the list to preview

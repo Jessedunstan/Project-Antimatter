@@ -5,6 +5,7 @@ Exposes sovereign local APIs for Desktop Shell (Tauri v2), Web GUI, and CLI.
 
 from __future__ import annotations
 import asyncio
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Query
@@ -15,6 +16,7 @@ from pydantic import BaseModel
 from antimatter.agent.loop import AgentReActLoop
 from antimatter.agent.supervisor import SubagentSupervisor
 from antimatter.agent.subagent import SubagentSpec, WorkspaceMode
+from antimatter.agent.swarm import SwarmOrchestrator
 from antimatter.artifacts.manager import ArtifactManager
 from antimatter.artifacts.renderer import ArtifactRenderer
 from antimatter.artifacts.types import ArtifactType
@@ -24,12 +26,40 @@ from antimatter.brain.client import LocalLLMClient
 from antimatter.brain.types import ChatMessage, ChatRole
 from antimatter.tools.fs_manager import FileSystemManager
 from antimatter.tools.terminal import TerminalSandbox
+from antimatter.brain.arbiter import VRAMArbiter, ModelTier
+from antimatter.agent.event_bus import AgentEventBus, AgentMessage
+from antimatter.agent.relay import SpecialistRelayEngine, SpecialistDomain, RelayBaton
+from antimatter.agent.specialists.steering import SteeringSpecialist
+from antimatter.agent.specialists.vision import VisionFrameInspector
+from antimatter.agent.specialists.media import ComfyUIMediaEngine
+from antimatter.agent.specialists.critic import CodeCriticSpecialist
+from antimatter.agent.specialists.fuzzer import GameQAFuzzer
+
+
+class RelayConsultRequest(BaseModel):
+    caller_id: str = "surface_ui"
+    domain: str
+    prompt: str
+    context_data: Dict[str, Any] = {}
+
+
+class FuzzRunRequest(BaseModel):
+    session_id: str = "surface-fuzz"
+    num_ticks: int = 15
 
 
 class ChatRequest(BaseModel):
     task: str
     workspace_dir: Optional[str] = None
     max_steps: int = 15
+
+
+class SwarmRunRequest(BaseModel):
+    goal: str
+    target_file: str
+    test_file: Optional[str] = None
+    test_command: Optional[str] = None
+    max_retries: int = 2
 
 
 class IndexRequest(BaseModel):
@@ -72,6 +102,23 @@ def create_app() -> FastAPI:
     artifact_manager = ArtifactManager(workspace_root / ".antimatter" / "artifacts")
     supervisor = SubagentSupervisor(workspace_root)
     llm_client = LocalLLMClient(settings)
+
+    # Multi-Agent Relay & VRAM Arbiter Mesh
+    vram_arbiter = VRAMArbiter(total_vram_mb=8192, vram_headroom_mb=1024)
+    event_bus = AgentEventBus()
+    relay_engine = SpecialistRelayEngine(arbiter=vram_arbiter, event_bus=event_bus, llm_client=llm_client)
+
+    steering_sp = SteeringSpecialist(event_bus=event_bus)
+    vision_sp = VisionFrameInspector()
+    media_sp = ComfyUIMediaEngine(output_dir=workspace_root / "artifacts" / "media")
+    critic_sp = CodeCriticSpecialist()
+    fuzzer = GameQAFuzzer(steering=steering_sp, vision=vision_sp, critic=critic_sp, event_bus=event_bus)
+
+    relay_engine.register_specialist(SpecialistDomain.STEERING, steering_sp.handle_relay_baton)
+    relay_engine.register_specialist(SpecialistDomain.VISION, vision_sp.handle_relay_baton)
+    relay_engine.register_specialist(SpecialistDomain.MEDIA, media_sp.handle_relay_baton)
+    relay_engine.register_specialist(SpecialistDomain.CRITIC_TESTER, critic_sp.handle_relay_baton)
+    relay_engine.register_specialist(SpecialistDomain.DEEP_REASONING, critic_sp.handle_relay_baton)
 
     app = FastAPI(
         title="Antimatter Sovereign Engine API",
@@ -212,6 +259,22 @@ def create_app() -> FastAPI:
         trajectory = await agent.run(task=req.task)
         return trajectory.model_dump()
 
+    @app.post("/swarm/run")
+    async def run_swarm(req: SwarmRunRequest):
+        ws = workspace_root
+        orchestrator = SwarmOrchestrator(
+            workspace_dir=ws,
+            llm_client=llm_client,
+            max_retries=req.max_retries,
+        )
+        trajectory = await orchestrator.run(
+            goal=req.goal,
+            target_file=req.target_file,
+            test_file=req.test_file,
+            test_command=req.test_command,
+        )
+        return trajectory.model_dump()
+
     # ------------------------------------------------------------------------
     # 7. SUBAGENT SUPERVISOR & TELEMETRY
     # ------------------------------------------------------------------------
@@ -256,6 +319,59 @@ def create_app() -> FastAPI:
         if not art:
             raise HTTPException(status_code=404, detail="Artifact not found")
         return HTMLResponse(content=ArtifactRenderer.render_to_html(art))
+
+    # ------------------------------------------------------------------------
+    # 9. DESIGN LAB & 3D STAGING TELEMETRY
+    # ------------------------------------------------------------------------
+    @app.get("/staging/scenarios")
+    def list_staging_scenarios():
+        """Scans docs/dashboard/design_lab/testing/ and reports active proving grounds."""
+        testing_dir = Path("docs/dashboard/design_lab/testing")
+        scenarios = []
+        if testing_dir.exists():
+            for folder in sorted(testing_dir.iterdir()):
+                if folder.is_dir():
+                    proofs = [f.name for f in folder.glob("*.png")] + [f.name for f in folder.glob("*.obj")]
+                    scenarios.append({
+                        "id": folder.name,
+                        "path": str(folder),
+                        "has_readme": (folder / "README.md").exists(),
+                        "proof_count": len(proofs),
+                        "proof_files": proofs,
+                    })
+        return {"status": "ok", "scenarios": scenarios}
+
+    # ------------------------------------------------------------------------
+    # 10. MULTI-AGENT RELAY & VRAM ARBITER TELEMETRY
+    # ------------------------------------------------------------------------
+    @app.get("/relay/status")
+    def get_relay_status():
+        return {
+            "vram": vram_arbiter.get_status(),
+            "specialists": [d.value for d in SpecialistDomain],
+        }
+
+    @app.post("/relay/consult")
+    async def consult_specialist(req: RelayConsultRequest):
+        try:
+            domain = SpecialistDomain(req.domain.lower())
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid domain '{req.domain}'")
+
+        baton = RelayBaton(
+            baton_id=f"api-relay-{int(time.time()*1000)}",
+            caller_id=req.caller_id,
+            domain=domain,
+            prompt=req.prompt,
+            context_data=req.context_data,
+        )
+        res = await relay_engine.consult(baton)
+        return res.model_dump()
+
+    @app.post("/fuzz/run")
+    async def run_fuzzing(req: FuzzRunRequest):
+        report = await fuzzer.run_fuzzing_session(session_id=req.session_id, num_ticks=req.num_ticks)
+        return report.model_dump()
 
     return app
 

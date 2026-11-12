@@ -1,0 +1,14 @@
+{
+  "scenario_id": "LAB-3D-03",
+  "name": "REA (Reverse Engineering Analyst) Anatomical Kitbash Harvester",
+  "status": "VERIFIED_PASS",
+  "slices_extracted": 3,
+  "parts_harvested": ["lower_limbs", "torso", "head_upper"],
+  "boundary_loop_sockets": true,
+  "artifacts": {
+    "segmentation_proof": "proof_harvest_segmentation_canonical.png",
+    "part_head": "rea_part_head_upper.obj",
+    "part_torso": "rea_part_torso.obj",
+    "part_limbs": "rea_part_lower_limbs.obj"
+  }
+}

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import Editor, { OnMount } from "@monaco-editor/react";
-import { Save, Sparkles, Code2 } from "lucide-react";
+import { Save, Sparkles, Code2, AlertCircle } from "lucide-react";
 import { api } from "../services/api";
+import { Diagnostic } from "../types";
 
 interface MonacoEditorProps {
   currentFile: string;
@@ -16,7 +17,37 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
   const [loading, setLoading] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
   const [statusMsg, setStatusMsg] = useState<string>("Ready");
+  const [diagnosticsCount, setDiagnosticsCount] = useState<number>(0);
   const editorRef = useRef<any>(null);
+  const monacoRef = useRef<any>(null);
+
+  // Update diagnostics markers in Monaco
+  const updateDiagnostics = async (filePath: string) => {
+    if (!filePath || !editorRef.current || !monacoRef.current) return;
+    try {
+      const diags: Diagnostic[] = await api.getDiagnostics(filePath);
+      const monaco = monacoRef.current;
+      const model = editorRef.current.getModel();
+      if (!model) return;
+
+      const markers = diags.map((d) => ({
+        severity:
+          d.severity === 1
+            ? monaco.MarkerSeverity.Error
+            : monaco.MarkerSeverity.Warning,
+        message: d.message,
+        startLineNumber: Math.max(1, d.start_line),
+        startColumn: Math.max(1, d.start_char + 1),
+        endLineNumber: Math.max(1, d.end_line),
+        endColumn: Math.max(1, d.end_char + 1),
+      }));
+
+      monaco.editor.setModelMarkers(model, "antimatter-lsp", markers);
+      setDiagnosticsCount(markers.length);
+    } catch {
+      // Ignore diagnostics fetch errors gracefully
+    }
+  };
 
   // Load file content when currentFile changes
   useEffect(() => {
@@ -28,6 +59,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
       .then((c) => {
         setContent(c);
         setStatusMsg("Loaded");
+        setTimeout(() => updateDiagnostics(currentFile), 300);
       })
       .catch((err) => {
         setContent(`// Error loading file: ${err.message}`);
@@ -45,6 +77,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
       const currentVal = editorRef.current.getValue();
       await api.writeFile(currentFile, currentVal);
       setStatusMsg("Saved");
+      await updateDiagnostics(currentFile);
       setTimeout(() => setStatusMsg("Ready"), 2000);
     } catch (e: any) {
       setStatusMsg(`Save failed: ${e.message}`);
@@ -96,6 +129,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
 
   const handleEditorDidMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
+    monacoRef.current = monaco;
 
     // Register Save command: Ctrl+S
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
@@ -106,6 +140,10 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
       triggerAutocomplete();
     });
+
+    if (currentFile) {
+      updateDiagnostics(currentFile);
+    }
   };
 
   const detectLanguage = (path: string) => {
@@ -125,6 +163,12 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
         <div className="flex items-center space-x-2 text-xs">
           <Code2 size={14} className="text-blue-400" />
           <span className="font-mono text-white font-medium">{currentFile || "Untitled"}</span>
+          {diagnosticsCount > 0 && (
+            <span className="flex items-center text-[10px] text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded border border-amber-400/20">
+              <AlertCircle size={10} className="mr-1" />
+              {diagnosticsCount} issues
+            </span>
+          )}
         </div>
         <div className="flex items-center space-x-2">
           <button
@@ -168,6 +212,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
               cursorBlinking: "smooth",
               renderLineHighlight: "all",
               lineNumbers: "on",
+              glyphMargin: true,
             }}
           />
         )}
@@ -178,6 +223,7 @@ export const MonacoEditor: React.FC<MonacoEditorProps> = ({
         <div className="flex items-center space-x-4 font-mono">
           <span>{detectLanguage(currentFile).toUpperCase()}</span>
           <span>UTF-8</span>
+          <span>Diagnostics: {diagnosticsCount}</span>
         </div>
         <div className="text-right text-[#c2c7d0]">{statusMsg}</div>
       </div>

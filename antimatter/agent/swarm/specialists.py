@@ -75,6 +75,8 @@ class ArchitectSpecialist:
     async def execute(self, goal: str, evidence: ScoutEvidence) -> PatchBlueprint:
         logger.info("[Architect] Formulating patch blueprint for %s...", evidence.file_path)
 
+        test_section = f"TEST CODE:\n```python\n{evidence.test_code_snippet}\n```" if evidence.test_code_snippet else ""
+
         prompt = f"""You are a Principal Software Architect.
 Analyze this code defect and formulate an exact multi-line patch.
 
@@ -86,7 +88,7 @@ SOURCE CODE:
 {evidence.code_snippet}
 ```
 
-{f'TEST CODE:\n```python\n{evidence.test_code_snippet}\n```' if evidence.test_code_snippet else ''}
+{test_section}
 
 Respond ONLY with a JSON object containing:
 {{

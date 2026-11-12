@@ -6,9 +6,9 @@ import os
 import shutil
 import pytest
 
-from staging.3d_blender_vlm.generator import AnatomicalParams, ProceduralAnatomicalGenerator
-from staging.3d_blender_vlm.renderer import SoftwareCameraRenderer
-from staging.3d_blender_vlm.critic_loop import HillClimbingLoop, VLMCritic
+from staging.lab_3d_blender_vlm.generator import AnatomicalParams, ProceduralAnatomicalGenerator
+from staging.lab_3d_blender_vlm.renderer import SoftwareCameraRenderer
+from staging.lab_3d_blender_vlm.critic_loop import HillClimbingLoop, VLMCritic
 
 
 @pytest.fixture

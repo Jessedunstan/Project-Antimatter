@@ -1,0 +1,16 @@
+{
+  "scenario_id": "LAB-3D-04",
+  "name": "Hierarchical Voxel/SDF Octree Boolean Stitcher & Dual Contouring",
+  "status": "VERIFIED_PASS",
+  "blend_radius": 0.15,
+  "octree_depth": 5,
+  "manifold_watertight": true,
+  "artifacts": {
+    "stitched_mesh": "proof_head_ear_stitched_assembly.obj",
+    "composite_4view": "proof_stitched_composite_4view.png",
+    "front": "proof_stitched_front.png",
+    "side": "proof_stitched_side.png",
+    "top": "proof_stitched_top.png",
+    "perspective": "proof_stitched_perspective_34.png"
+  }
+}

@@ -1,0 +1,81 @@
+[
+  {
+    "iteration": 0,
+    "params": {
+      "feature_type": "ear",
+      "scale": 1.0,
+      "helix_curl": 0.2,
+      "concha_depth": 0.15,
+      "lobule_fullness": 0.15,
+      "tragus_prominence": 0.1,
+      "subdivisions": 24
+    },
+    "score": 1.0,
+    "feedback": "Outer helix lacks sufficient roll curvature. | Concha cavity is too shallow for sound channeling. | Earlobe mass appears thin and underdeveloped.",
+    "composite_render": "docs/dashboard/design_lab/testing/3d_01_procedural_blender_vlm_critic\\iter_0_composite_4view.png"
+  },
+  {
+    "iteration": 1,
+    "params": {
+      "feature_type": "ear",
+      "scale": 1.0,
+      "helix_curl": 0.25,
+      "concha_depth": 0.2,
+      "lobule_fullness": 0.2,
+      "tragus_prominence": 0.1,
+      "subdivisions": 24
+    },
+    "score": 2.6,
+    "feedback": "Outer helix lacks sufficient roll curvature. | Concha cavity is too shallow for sound channeling. | Earlobe mass appears thin and underdeveloped.",
+    "status": "ACCEPTED",
+    "composite_render": "docs/dashboard/design_lab/testing/3d_01_procedural_blender_vlm_critic\\iter_1_composite_4view.png"
+  },
+  {
+    "iteration": 2,
+    "params": {
+      "feature_type": "ear",
+      "scale": 1.0,
+      "helix_curl": 0.3,
+      "concha_depth": 0.25,
+      "lobule_fullness": 0.25,
+      "tragus_prominence": 0.1,
+      "subdivisions": 24
+    },
+    "score": 4.3,
+    "feedback": "Outer helix lacks sufficient roll curvature. | Concha cavity is too shallow for sound channeling. | Earlobe mass appears thin and underdeveloped.",
+    "status": "ACCEPTED",
+    "composite_render": "docs/dashboard/design_lab/testing/3d_01_procedural_blender_vlm_critic\\iter_2_composite_4view.png"
+  },
+  {
+    "iteration": 3,
+    "params": {
+      "feature_type": "ear",
+      "scale": 1.0,
+      "helix_curl": 0.35,
+      "concha_depth": 0.3,
+      "lobule_fullness": 0.3,
+      "tragus_prominence": 0.1,
+      "subdivisions": 24
+    },
+    "score": 6.0,
+    "feedback": "Outer helix lacks sufficient roll curvature. | Concha cavity is too shallow for sound channeling. | Earlobe mass appears thin and underdeveloped.",
+    "status": "ACCEPTED",
+    "composite_render": "docs/dashboard/design_lab/testing/3d_01_procedural_blender_vlm_critic\\iter_3_composite_4view.png"
+  },
+  {
+    "iteration": 4,
+    "params": {
+      "feature_type": "ear",
+      "scale": 1.0,
+      "helix_curl": 0.4,
+      "concha_depth": 0.35,
+      "lobule_fullness": 0.35,
+      "tragus_prominence": 0.1,
+      "subdivisions": 24
+    },
+    "score": 7.7,
+    "feedback": "Outer helix lacks sufficient roll curvature. | Concha cavity is too shallow for sound channeling. | Earlobe mass appears thin and underdeveloped.",
+    "status": "ACCEPTED",
+    "composite_render": "docs/dashboard/design_lab/testing/3d_01_procedural_blender_vlm_critic\\iter_4_composite_4view.png"
+  }
+]

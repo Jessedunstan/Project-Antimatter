@@ -64,6 +64,25 @@ export interface AgentTrajectory {
   error_message?: string;
 }
 
+export interface SwarmStep {
+  stage: "scout" | "architect" | "coder" | "verifier" | "synthesis";
+  status: "pending" | "running" | "passed" | "failed";
+  summary: string;
+  duration_sec: number;
+  evidence?: Record<string, any>;
+}
+
+export interface SwarmTrajectory {
+  task_id: string;
+  user_goal: string;
+  overall_status: "pending" | "running" | "passed" | "failed";
+  stages: SwarmStep[];
+  total_duration_sec: number;
+  checkpoint_id?: string;
+  final_report: string;
+  retries_count: number;
+}
+
 export interface SystemHealth {
   status: string;
   app_name: string;

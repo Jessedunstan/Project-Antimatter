@@ -322,7 +322,7 @@
     </div>
     <div class="header-stats">
       <div class="stat-pill"><span class="status-dot"></span> Hub State: Sovereign Offline</div>
-      <div class="stat-pill">Staging Lanes: 4 Isolated Labs</div>
+      <div class="stat-pill">Staging Lanes: 5 Proving Grounds</div>
       <div class="stat-pill">Mainline: Protected</div>
     </div>
   </header>
@@ -375,8 +375,8 @@
           Reverse Engineering Analyst pipeline for 3D meshes. Scans local or open 3D repositories (Objaverse/Thingiverse), isolates canonical sub-parts (ears, hands, noses), and fits them onto proportional skeleton cages via ICP.
         </div>
         <div class="card-meta">
-          <span>Staging: <code>staging/3d_rea_harvester/</code></span>
-          <span class="status-badge status-pending">○ Ready for Dispatch</span>
+          <span>Staging: <code>staging/lab_3d_rea_harvester/</code></span>
+          <span class="status-badge status-active">● Active Staging</span>
         </div>
       </div>
 
@@ -388,8 +388,21 @@
           Mathematical seam fusion engine. Converts separately generated micro-parts into high-resolution Signed Distance Fields (SDF) or OpenVDB octrees, executes continuous Boolean union, and applies Dual Contouring for water-tight assembly.
         </div>
         <div class="card-meta">
-          <span>Staging: <code>staging/3d_sdf_stitcher/</code></span>
-          <span class="status-badge status-pending">○ Ready for Dispatch</span>
+          <span>Staging: <code>staging/lab_3d_sdf_stitcher/</code></span>
+          <span class="status-badge status-active">● Active Staging</span>
+        </div>
+      </div>
+
+      <!-- CARD 5 -->
+      <div class="card" data-category="procedural">
+        <div class="card-tag">Scenario LAB-3D-05 // Master Integration</div>
+        <div class="card-title">Unified Compositional 3D Assembler</div>
+        <div class="card-desc">
+          The end-to-end character bust assembler. Unifies anatomical proportion matrices, REA harvested sub-parts, VLM-critic refined micro-features, and smooth polynomial Boolean blending into production-ready watertight meshes.
+        </div>
+        <div class="card-meta">
+          <span>Staging: <code>staging/lab_3d_compositional/</code></span>
+          <span class="status-badge status-active">● Production Verified (3,782 Verts)</span>
         </div>
       </div>
 
@@ -403,14 +416,40 @@
       <div class="timeline-list">
         
         <div class="timeline-item">
-          <div class="timeline-dot"></div>
+          <div class="timeline-dot" style="background: var(--accent-magenta); box-shadow: 0 0 10px var(--accent-magenta);"></div>
           <div class="timeline-content">
             <div class="timeline-header">
-              <span class="timeline-author">Main Design Lab</span>
+              <span class="timeline-author">LAB-3D-05 (Master Assembler)</span>
               <span class="timeline-time">Just now</span>
             </div>
             <div class="timeline-body">
-              Initialized Antimatter 3D Design Lab architecture. Established staging sandboxes, file-backed hand-back bus (<code>HANDOFF_STATE.md</code>), and mini-lab dispatch prompts.
+              <strong>Grand Unification Achieved!</strong> Unified REA proportion sockets, VLM refined micro-parts, and multi-part continuous SDF smooth fusion. Assembled complete watertight character bust: 3,782 vertices, 3,140 faces. Rendered 4-view proof sheets into testing dossier.
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green);"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="timeline-author">LAB-3D-04 (Voxel/SDF Stitcher)</span>
+              <span class="timeline-time">Just now</span>
+            </div>
+            <div class="timeline-body">
+              Completed smooth polynomial Boolean union ($smin$) and regular cell contouring. Successfully assembled head-and-ear mesh with zero seam creasing. Exported <code>proof_head_ear_stitched_assembly.obj</code>.
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-dot" style="background: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan);"></div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="timeline-author">LAB-3D-01 (Procedural VLM Critic)</span>
+              <span class="timeline-time">Just now</span>
+            </div>
+            <div class="timeline-body">
+              Verified closed-loop generator-verifier! Iterated procedural ear geometry from score 1.0 &rarr; 7.7 across 4 passes. Saved 4-view contact sheets and <code>final_refined_model.obj</code>.
             </div>
           </div>
         </div>

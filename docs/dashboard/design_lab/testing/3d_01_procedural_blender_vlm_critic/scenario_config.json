@@ -1,0 +1,24 @@
+{
+  "scenario_id": "LAB-3D-01",
+  "name": "Procedural Blender Python (bpy) & VLM Critic Hill-Climber",
+  "status": "VERIFIED_PASS",
+  "score": 9.0,
+  "iterations_executed": 3,
+  "views_rendered": ["front", "side", "top", "isometric"],
+  "model_type": "capsule_limb",
+  "best_parameters": {
+    "length": 2.2,
+    "radius": 0.45,
+    "taper": 0.8
+  },
+  "artifacts": {
+    "obj_model": "final/model.obj",
+    "bpy_script": "final/render_script.py",
+    "render_passes": {
+      "front": "final/proof_render_pass_front.png",
+      "side": "final/proof_render_pass_side.png",
+      "top": "final/proof_render_pass_top.png",
+      "isometric": "final/proof_render_pass_isometric.png"
+    }
+  }
+}

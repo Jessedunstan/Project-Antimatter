@@ -109,7 +109,7 @@ async def test_swarm_orchestrator_mock(tmp_path):
     # Setup test workspace
     fs = FileSystemManager(tmp_path)
     fs.write_atomic("math_mod.py", "def multiply(a, b):\n    return a + b  # BUG\n")
-    fs.write_atomic("test_math.py", "def test_mul(): assert multiply(3, 4) == 12\n")
+    fs.write_atomic("test_math.py", "from math_mod import multiply\ndef test_mul():\n    assert multiply(3, 4) == 12\n")
 
     settings = get_settings()
     settings.llm_backend = LLMBackendType.MOCK

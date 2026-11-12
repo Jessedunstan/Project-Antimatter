@@ -82,3 +82,20 @@ def test_api_autocomplete_endpoint(client):
     )
     assert resp.status_code == 200
     assert "completion" in resp.json()
+
+
+def test_api_swarm_run_endpoint(client):
+    resp = client.post(
+        "/swarm/run",
+        json={
+            "goal": "Verify system configuration constants",
+            "target_file": "antimatter/core/config.py",
+            "max_retries": 1,
+        },
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "task_id" in data
+    assert "stages" in data
+    assert data["user_goal"] == "Verify system configuration constants"
+

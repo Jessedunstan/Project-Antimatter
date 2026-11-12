@@ -18,6 +18,10 @@ from antimatter.agent.specialists.critic import (
     CodeCritiqueReport,
     CodeIssue,
 )
+from antimatter.agent.specialists.fuzzer import (
+    GameQAFuzzer,
+    FuzzingSessionReport,
+)
 
 __all__ = [
     "VisionFrameInspector",
@@ -32,4 +36,6 @@ __all__ = [
     "CriticVerdict",
     "CodeCritiqueReport",
     "CodeIssue",
+    "GameQAFuzzer",
+    "FuzzingSessionReport",
 ]

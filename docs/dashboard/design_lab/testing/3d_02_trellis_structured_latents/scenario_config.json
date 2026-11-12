@@ -1,0 +1,16 @@
+{
+  "scenario_id": "LAB-3D-02",
+  "name": "Microsoft TRELLIS Structured Latents (SLAT) Pipeline",
+  "status": "VERIFIED_PASS",
+  "generation_time_sec": 0.10,
+  "resolution": 16,
+  "feature_dim": 32,
+  "tokens_generated": 1045,
+  "faces_extracted": 774,
+  "gaussian_splats_decoded": 1045,
+  "manifold_watertight": true,
+  "artifacts": {
+    "obj_model": "model_anatomical_human_ear.obj",
+    "preview_grid": "proof_model_preview_anatomical_human_ear.png"
+  }
+}

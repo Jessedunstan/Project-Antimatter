@@ -5,6 +5,7 @@ import {
   SubagentTelemetry,
   WorkspaceEntry,
   AgentTrajectory,
+  SwarmTrajectory,
 } from "../types";
 
 const BASE_URL = "http://127.0.0.1:8000";
@@ -73,6 +74,21 @@ export const api = {
       body: JSON.stringify({ task, max_steps: maxSteps }),
     });
     if (!res.ok) throw new Error("Agent run failed");
+    return res.json();
+  },
+
+  async runSwarm(params: {
+    goal: string;
+    target_file: string;
+    test_file?: string;
+    test_command?: string;
+  }): Promise<SwarmTrajectory> {
+    const res = await fetch(`${BASE_URL}/swarm/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) throw new Error("Swarm run failed");
     return res.json();
   },
 
