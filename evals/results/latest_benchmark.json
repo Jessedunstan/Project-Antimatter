@@ -1,0 +1,413 @@
+{
+  "timestamp": "2026-11-12T04:27:28Z",
+  "models": [
+    "qwen2.5-coder:7b",
+    "llama3.2:1b"
+  ],
+  "max_steps": 6,
+  "results": {
+    "qwen2.5-coder:7b": [
+      {
+        "model": "qwen2.5-coder:7b",
+        "task_id": "01_pagination_offset",
+        "title": "Off-by-one pagination slice calculation",
+        "pre_test_failed_as_expected": true,
+        "passed": true,
+        "steps_taken": 4,
+        "tool_calls_count": 4,
+        "tool_errors_count": 0,
+        "wall_time_sec": 8.15,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "read_file",
+          "edit_file",
+          "run_command"
+        ]
+      },
+      {
+        "model": "qwen2.5-coder:7b",
+        "task_id": "02_discount_clamp",
+        "title": "Inverted min/max clamp on discount price",
+        "pre_test_failed_as_expected": true,
+        "passed": true,
+        "steps_taken": 4,
+        "tool_calls_count": 4,
+        "tool_errors_count": 0,
+        "wall_time_sec": 2.69,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "read_file",
+          "edit_file",
+          "run_command"
+        ]
+      },
+      {
+        "model": "qwen2.5-coder:7b",
+        "task_id": "03_lru_cache_eviction",
+        "title": "LRU cache evicts most-recently-used instead of least-recently-used",
+        "pre_test_failed_as_expected": true,
+        "passed": true,
+        "steps_taken": 4,
+        "tool_calls_count": 3,
+        "tool_errors_count": 0,
+        "wall_time_sec": 2.23,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "edit_file",
+          "run_command"
+        ]
+      },
+      {
+        "model": "qwen2.5-coder:7b",
+        "task_id": "04_slugify_normalization",
+        "title": "Slug generator forgets lowercase conversion and hyphen collapsing",
+        "pre_test_failed_as_expected": true,
+        "passed": true,
+        "steps_taken": 6,
+        "tool_calls_count": 7,
+        "tool_errors_count": 0,
+        "wall_time_sec": 3.63,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "read_file",
+          "edit_file",
+          "run_command",
+          "run_command",
+          "run_command",
+          "run_command"
+        ]
+      },
+      {
+        "model": "qwen2.5-coder:7b",
+        "task_id": "05_safe_mean_empty",
+        "title": "Weighted mean crashes on zero total weight and divides by wrong denominator",
+        "pre_test_failed_as_expected": true,
+        "passed": true,
+        "steps_taken": 4,
+        "tool_calls_count": 4,
+        "tool_errors_count": 0,
+        "wall_time_sec": 2.7,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "read_file",
+          "edit_file",
+          "run_command"
+        ]
+      },
+      {
+        "model": "qwen2.5-coder:7b",
+        "task_id": "06_moving_average_window",
+        "title": "Moving average slices wrong trailing window length",
+        "pre_test_failed_as_expected": true,
+        "passed": true,
+        "steps_taken": 5,
+        "tool_calls_count": 5,
+        "tool_errors_count": 0,
+        "wall_time_sec": 5.52,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "read_file",
+          "edit_file",
+          "run_command",
+          "write_file"
+        ]
+      },
+      {
+        "model": "qwen2.5-coder:7b",
+        "task_id": "07_deep_merge_override",
+        "title": "Config merge keeps base value instead of override value",
+        "pre_test_failed_as_expected": true,
+        "passed": true,
+        "steps_taken": 4,
+        "tool_calls_count": 4,
+        "tool_errors_count": 0,
+        "wall_time_sec": 2.83,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "read_file",
+          "edit_file",
+          "run_command"
+        ]
+      },
+      {
+        "model": "qwen2.5-coder:7b",
+        "task_id": "08_token_bucket_cap",
+        "title": "Token bucket refill exceeds maximum capacity",
+        "pre_test_failed_as_expected": true,
+        "passed": true,
+        "steps_taken": 6,
+        "tool_calls_count": 7,
+        "tool_errors_count": 0,
+        "wall_time_sec": 4.09,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "read_file",
+          "edit_file",
+          "run_command",
+          "run_command",
+          "run_command",
+          "run_command"
+        ]
+      },
+      {
+        "model": "qwen2.5-coder:7b",
+        "task_id": "09_env_parser_equals",
+        "title": "Key-value parser breaks when value contains '=' character",
+        "pre_test_failed_as_expected": true,
+        "passed": true,
+        "steps_taken": 4,
+        "tool_calls_count": 4,
+        "tool_errors_count": 0,
+        "wall_time_sec": 2.85,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "read_file",
+          "edit_file",
+          "run_command"
+        ]
+      },
+      {
+        "model": "qwen2.5-coder:7b",
+        "task_id": "10_retry_backoff_exponent",
+        "title": "Exponential backoff multiplies instead of exponentiating base factor",
+        "pre_test_failed_as_expected": true,
+        "passed": true,
+        "steps_taken": 6,
+        "tool_calls_count": 8,
+        "tool_errors_count": 0,
+        "wall_time_sec": 5.09,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "read_file",
+          "edit_file",
+          "run_command",
+          "run_command",
+          "list_directory",
+          "run_command",
+          "list_directory"
+        ]
+      }
+    ],
+    "llama3.2:1b": [
+      {
+        "model": "llama3.2:1b",
+        "task_id": "01_pagination_offset",
+        "title": "Off-by-one pagination slice calculation",
+        "pre_test_failed_as_expected": true,
+        "passed": false,
+        "steps_taken": 6,
+        "tool_calls_count": 10,
+        "tool_errors_count": 9,
+        "wall_time_sec": 7.63,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "edit_file",
+          "run_command",
+          "list_directory",
+          "read_file",
+          "edit_file",
+          "run_command",
+          "edit_file",
+          "run_command",
+          "run_command"
+        ]
+      },
+      {
+        "model": "llama3.2:1b",
+        "task_id": "02_discount_clamp",
+        "title": "Inverted min/max clamp on discount price",
+        "pre_test_failed_as_expected": true,
+        "passed": false,
+        "steps_taken": 3,
+        "tool_calls_count": 2,
+        "tool_errors_count": 1,
+        "wall_time_sec": 2.68,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "edit_file"
+        ]
+      },
+      {
+        "model": "llama3.2:1b",
+        "task_id": "03_lru_cache_eviction",
+        "title": "LRU cache evicts most-recently-used instead of least-recently-used",
+        "pre_test_failed_as_expected": true,
+        "passed": false,
+        "steps_taken": 5,
+        "tool_calls_count": 6,
+        "tool_errors_count": 4,
+        "wall_time_sec": 8.72,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "write_file",
+          "edit_file",
+          "run_command",
+          "read_file",
+          "run_command"
+        ]
+      },
+      {
+        "model": "llama3.2:1b",
+        "task_id": "04_slugify_normalization",
+        "title": "Slug generator forgets lowercase conversion and hyphen collapsing",
+        "pre_test_failed_as_expected": true,
+        "passed": false,
+        "steps_taken": 4,
+        "tool_calls_count": 2,
+        "tool_errors_count": 2,
+        "wall_time_sec": 2.51,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "read_file"
+        ]
+      },
+      {
+        "model": "llama3.2:1b",
+        "task_id": "05_safe_mean_empty",
+        "title": "Weighted mean crashes on zero total weight and divides by wrong denominator",
+        "pre_test_failed_as_expected": true,
+        "passed": false,
+        "steps_taken": 4,
+        "tool_calls_count": 3,
+        "tool_errors_count": 0,
+        "wall_time_sec": 3.46,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "edit_file",
+          "write_file"
+        ]
+      },
+      {
+        "model": "llama3.2:1b",
+        "task_id": "06_moving_average_window",
+        "title": "Moving average slices wrong trailing window length",
+        "pre_test_failed_as_expected": true,
+        "passed": false,
+        "steps_taken": 3,
+        "tool_calls_count": 4,
+        "tool_errors_count": 0,
+        "wall_time_sec": 6.36,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "edit_file",
+          "write_file",
+          "run_command"
+        ]
+      },
+      {
+        "model": "llama3.2:1b",
+        "task_id": "07_deep_merge_override",
+        "title": "Config merge keeps base value instead of override value",
+        "pre_test_failed_as_expected": true,
+        "passed": false,
+        "steps_taken": 4,
+        "tool_calls_count": 12,
+        "tool_errors_count": 10,
+        "wall_time_sec": 8.25,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "write_file",
+          "edit_file",
+          "run_command",
+          "read_file",
+          "write_file",
+          "edit_file",
+          "run_command",
+          "edit_file",
+          "write_file",
+          "run_command",
+          "run_command"
+        ]
+      },
+      {
+        "model": "llama3.2:1b",
+        "task_id": "08_token_bucket_cap",
+        "title": "Token bucket refill exceeds maximum capacity",
+        "pre_test_failed_as_expected": true,
+        "passed": false,
+        "steps_taken": 4,
+        "tool_calls_count": 3,
+        "tool_errors_count": 3,
+        "wall_time_sec": 2.95,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "edit_file",
+          "write_file",
+          "edit_file"
+        ]
+      },
+      {
+        "model": "llama3.2:1b",
+        "task_id": "09_env_parser_equals",
+        "title": "Key-value parser breaks when value contains '=' character",
+        "pre_test_failed_as_expected": true,
+        "passed": false,
+        "steps_taken": 4,
+        "tool_calls_count": 4,
+        "tool_errors_count": 2,
+        "wall_time_sec": 6.73,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "edit_file",
+          "run_command",
+          "edit_file",
+          "run_command"
+        ]
+      },
+      {
+        "model": "llama3.2:1b",
+        "task_id": "10_retry_backoff_exponent",
+        "title": "Exponential backoff multiplies instead of exponentiating base factor",
+        "pre_test_failed_as_expected": true,
+        "passed": false,
+        "steps_taken": 4,
+        "tool_calls_count": 3,
+        "tool_errors_count": 0,
+        "wall_time_sec": 3.09,
+        "agent_status": "completed",
+        "error_message": null,
+        "tools_invoked": [
+          "read_file",
+          "edit_file",
+          "run_command"
+        ]
+      }
+    ]
+  }
+}
